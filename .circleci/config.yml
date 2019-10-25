@@ -37,9 +37,11 @@ jobs:
       - store_artifacts:
           path: test-reports
           destination: test-reports
-
-      - push_to_registry:
-          name: push to docker hub
-          command: |
-            docker login --username=ceilingcat --password=${DOCKERHUB_CIRCLECI_TOKEN}
-            docker push ceilingcat/loner-bot:{{ branch }}
+#  push_to_registry:
+#    steps:
+#      - checkout
+#      - run:
+#          name: push to docker hub
+#          command: |
+#            docker login --username=ceilingcat --password=${DOCKERHUB_CIRCLECI_TOKEN}
+#            docker push ceilingcat/loner-bot:{{ branch }}
