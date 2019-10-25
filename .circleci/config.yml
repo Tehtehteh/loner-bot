@@ -40,13 +40,13 @@ jobs:
       - run:
           name: pylint
           command: |
-            .venv/bin/flake8 --format=codeclimate --output-file=${REPORT_FILE} --tee src
+            mkdir test-reports
+            .venv/bin/flake8 --format=codeclimate --output-file=test-reports/${REPORT_FILE} --tee src
           environment:
             - REPORT_FILE: flake8_report.json
-
       - store_artifacts:
-                path: test-reports
-                destination: test-reports
+            path: test-reports
+            destination: test-reports
 #      - run:
 #          name: run tests
 #          command: |
