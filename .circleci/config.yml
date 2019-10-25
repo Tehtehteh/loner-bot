@@ -40,6 +40,7 @@ jobs:
       - run:
           name: pylint
           command: |
+            ls -al
             mkdir test-reports
             .venv/bin/flake8 --format=codeclimate --output-file=test-reports/${REPORT_FILE} --tee src
           environment:
