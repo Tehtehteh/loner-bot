@@ -5,6 +5,9 @@ verify_ssl = true
 
 [dev-packages]
 pylint = "*"
+flake8 = "*"
+flake8-bandit = "*"
+flake8-codeclimate = "*"
 
 [packages]
 aiohttp = "*"
