@@ -21,7 +21,7 @@ jobs:
             pip install pipenv
             pipenv install --deploy --ignore-pipfile
           environment:
-            - PIPENV_PIPFILE: /app/Pipfile
+            - PIPENV_PIPFILE: src/Pipfile
             - PIPENV_VENV_IN_PROJECT: 1
 
       - save_cache:
