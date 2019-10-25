@@ -91,33 +91,33 @@ def get_date(dp: Dispatcher):
             data['date'] = message.text
             logger.info('Current state: %s', data)
         await TicketOrderState.next()
-        await message.reply("Введите номер вагона.")
+        await message.reply("Введите код поезда (пример: 012Ш).")
 
     dp.register_message_handler(_get_date, state=TicketOrderState.date)
 
 
 def get_train_code(dp: Dispatcher):
     async def _get_date(message: types.Message, state: FSMContext):
-        logger.info('User %s has set departure date: %s', message.from_user.username,
+        logger.info('User %s has train code: %s', message.from_user.username,
                     message.text)
         async with state.proxy() as data:
             data['train_code'] = message.text
             logger.info('Current state: %s', data)
         await TicketOrderState.next()
-        await message.reply("Введите номер вагона.")
+        await message.reply("Введите тип вагона (одной буквой, пример: К -- купе).")
 
     dp.register_message_handler(_get_date, state=TicketOrderState.train_code)
 
 
 def get_wagon_type(dp: Dispatcher):
     async def _get_wagon_number(message: types.Message, state: FSMContext):
-        logger.info('User %s has set wagon number: %s', message.from_user.username,
+        logger.info('User %s has set wagon type: %s', message.from_user.username,
                     message.text)
         async with state.proxy() as data:
             data['wagon_type'] = message.text
             logger.info('Current state: %s', data)
         await TicketOrderState.next()
-        await message.reply("Введите через запятую номера сидений, которые надо бронировать. Пример: 1,2,3")
+        await message.reply("Введите номер вагона (пример: 12).")
 
     dp.register_message_handler(_get_wagon_number, state=TicketOrderState.wagon_type)
 
@@ -180,18 +180,18 @@ def get_final_confirmation(dp: Dispatcher):
         async with state.proxy() as data:
             ticket_order = TrainOrder(
                 order_number=0,
-                from_station_id=2208001,
-                to_station_id=2218000,
-                train_code='012Ш',
-                date='2019-11-16',
-                wagon_number=2,
+                from_station_id=data['from_station'],
+                to_station_id=data['to_station'],
+                train_code=data['train_code'],
+                date=data['date'],
+                wagon_number=data['wagon_number'],
                 wagon_class='Б',
-                wagon_type=WagonType.K,
+                wagon_type=data['wagon_type'],
                 wagon_railway=35,
                 charline='Б',
                 bedding=1,
                 services='М',
-                seat_number='008',
+                seat_number=data['seats'][0],
                 reserve=0
             )
             job_id = f'ticket-booking-{message.from_user.username}-{ticket_order.from_station_id}-{ticket_order.to_station_id}-{ticket_order.date}'

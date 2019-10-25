@@ -8,7 +8,7 @@ from urllib.parse import quote
 
 from typing import List, Dict, Any
 
-from bot.models.train_order import TrainOrder
+from ..models.train_order import TrainOrder
 
 
 logger = logging.getLogger(__name__)
@@ -29,7 +29,12 @@ class InvalidInputDateException(Exception):
     pass
 
 
+class SeatAlreadyBookedException(Exception):
+    pass
+
+
 INVALID_INPUT_DATE_MSG = 'Введена неверная дата'
+SEAT_ALREADY_BOOKED_MSG = 'Выбранное вами место'
 
 
 class TrainService:
@@ -70,7 +75,9 @@ class TrainService:
             response_json = await response.json()
             if 'error' in response_json:
                 err = response_json['data']['error']
-                if err == INVALID_INPUT_DATE_MSG:
+                if isinstance(err, list) and len(err) and err[0].startswith(SEAT_ALREADY_BOOKED_MSG):
+                    raise SeatAlreadyBookedException(err)
+                elif err == INVALID_INPUT_DATE_MSG:
                     raise InvalidInputDateException
                 logger.error('Got error from Train service: %s', err)
                 return err
@@ -83,10 +90,11 @@ class TrainService:
         logger.info('Trying to renew captcha!')
         async with aiohttp.request('GET', self.captcha_url,
                                    cookies={'_gv_sessid': TrainService.gv_session_id}) as response:
-            gv_session_id = response.cookies['_gv_sessid'].value
-            if gv_session_id != TrainService.gv_session_id:
-                logger.info('Setting new gv session id for TrainService (%s)', gv_session_id)
-                TrainService.gv_session_id = gv_session_id
+            if '_gv_sessid' in response.cookies:
+                gv_session_id = response.cookies['_gv_sessid'].value
+                if gv_session_id != TrainService.gv_session_id:
+                    logger.info('Setting new gv session id for TrainService (%s)', gv_session_id)
+                    TrainService.gv_session_id = gv_session_id
             captcha_file_name = os.path.join('captchas', str(uuid.uuid4()) + '.jpg')
             with open(captcha_file_name, 'wb') as captcha_fd:
                 async for image_part in response.content.iter_chunked(1048):

@@ -5,9 +5,11 @@ from urllib.parse import quote
 from dataclasses import dataclass
 from enum import Enum
 
+SEAT_NUMBER_MAX_LENGTH = 3
 
 # ascii characters are prohibited :D
 ru_alphabet_lower = 'абвгдеёжзиклмопрстуфхцчшщэюя'
+names = ['Сергій', 'Іван', 'Микола', 'Софія', 'Дмитро', 'Ганна', 'Надія', 'Віктор', '']
 
 
 class WagonType(Enum):
@@ -40,6 +42,9 @@ class TrainOrder:
     reserve: int = 0
     bedding: int = 0
 
+    # def __init__(self):
+    #     pass
+
     def __post_init__(self):
         self.first_name = self.roll_random_name()
         self.last_name = self.roll_random_name()
@@ -48,6 +53,15 @@ class TrainOrder:
     def roll_random_name():
         name_length = random.randint(5, 10)
         return ''.join(random.choice(ru_alphabet_lower) for _ in range(name_length)).title()
+
+    def add_seat(self, seat_number):
+        if 3 < len(seat_number) < 3:
+            seat_number = self.normalize_seat_number(seat_number)
+
+
+    @staticmethod
+    def normalize_seat_number(seat_number: str) -> str:
+        return seat_number.zfill(SEAT_NUMBER_MAX_LENGTH)
 
     def serialize(self) -> str:
         tpl = f"""places[0][ord]=0&
