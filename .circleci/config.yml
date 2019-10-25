@@ -47,11 +47,14 @@ jobs:
       - store_artifacts:
             path: test-reports
             destination: test-reports
-  workflows:
-    build-test:
-      jobs:
-        - build
-        - test
+workflows:
+  version: 2
+  build-test:
+    jobs:
+      - build
+      - test:
+          requires:
+            - build
 #      - run:
 #          name: run tests
 #          command: |
