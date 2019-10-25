@@ -9,7 +9,7 @@ from aiogram.dispatcher import FSMContext
 
 from .state import TicketOrderState
 from ..train_service.service import TrainService
-from ..models.train_order import TrainOrder, WagonType
+from ..models.train_order import TrainOrder
 from ..scheduler.handlers import scheduler, poll_ticket_service_task
 
 logger = logging.getLogger(__name__)

@@ -27,6 +27,14 @@ jobs:
           paths:
             - ./venv
           key: v1-dependencies-{{ checksum "src/Pipfile.lock" }}
+  tag_and_push:
+    machine: true
+    steps:
+      - checkout
+      - run: |
+          echo ${DOCKERHUB_CIRCLECI_TOKEN} | docker login --username=ceilingcat --password-stdin
+          docker build . --tag=ceilingcat/loner:$CIRCLE_SHA1
+          docker push
   test:
     docker:
       - image: circleci/python:3.7
@@ -56,6 +64,14 @@ workflows:
       - test:
           requires:
             - build
+      - tag_and_push:
+          requires:
+            - build
+#            - test
+          filters:
+            branches:
+              only: master
+
 #      - run:
 #          name: run tests
 #          command: |
