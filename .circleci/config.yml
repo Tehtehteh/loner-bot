@@ -9,7 +9,7 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "app/Pipfile.lock" }}
+            - v1-dependencies-{{ checksum "src/Pipfile.lock" }}
             - v1-dependencies-
 
       - run:
