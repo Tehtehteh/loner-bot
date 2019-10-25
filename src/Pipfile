@@ -13,8 +13,6 @@ flake8-codeclimate = "*"
 aiohttp = "*"
 aiogram = "*"
 apscheduler = "*"
-tensorflow = "*"
-opencv-python = "*"
 jinja2 = "*"
 
 [requires]
