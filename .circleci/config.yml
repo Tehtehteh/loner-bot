@@ -37,8 +37,10 @@ jobs:
       - store_artifacts:
           path: test-reports
           destination: test-reports
-
-      - push_to_registry:
+  push_to_registry:
+    steps:
+      - checkout
+      - run:
           name: push to docker hub
           command: |
             docker login --username=ceilingcat --password=${DOCKERHUB_CIRCLECI_TOKEN}
