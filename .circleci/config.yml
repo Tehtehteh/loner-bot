@@ -33,8 +33,8 @@ jobs:
       - checkout
       - run: |
           echo ${DOCKERHUB_CIRCLECI_TOKEN} | docker login --username=ceilingcat --password-stdin
-          docker build . --tag=ceilingcat/loner:$CIRCLE_SHA1
-          docker push
+          docker build . --tag=ceilingcat/loner-bot:$CIRCLE_SHA1
+          docker push ceilingcat/loner-bot:$CIRCLE_SHA1
   test:
     docker:
       - image: circleci/python:3.7
