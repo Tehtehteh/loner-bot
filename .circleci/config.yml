@@ -15,10 +15,11 @@ jobs:
       - run:
           name: install dependencies
           command: |
+            ls
             python3 -m venv venv
             . venv/bin/activate
             pip install pipenv
-            pipenv install
+            pipenv install --deploy --ignore-pipfile
           environment:
             - PIPENV_PIPFILE: /app/Pipfile
             - PIPENV_VENV_IN_PROJECT: 1
@@ -28,15 +29,15 @@ jobs:
             - ./venv
           key: v1-dependencies-{{ checksum "requirements.txt" }}
 
-      - run:
-          name: run tests
-          command: |
-            . venv/bin/activate
-            python manage.py test
-
-      - store_artifacts:
-          path: test-reports
-          destination: test-reports
+#      - run:
+#          name: run tests
+#          command: |
+#            . venv/bin/activate
+#            python manage.py test
+#
+#      - store_artifacts:
+#          path: test-reports
+#          destination: test-reports
 #  push_to_registry:
 #    steps:
 #      - checkout
