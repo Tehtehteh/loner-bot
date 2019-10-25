@@ -179,7 +179,6 @@ def get_final_confirmation(dp: Dispatcher):
     async def _get_final_confirmation(message: types.Message, state: FSMContext):
         async with state.proxy() as data:
             ticket_order = TrainOrder(
-                order_number=0,
                 from_station_id=data['from_station'],
                 to_station_id=data['to_station'],
                 train_code=data['train_code'],
@@ -188,12 +187,9 @@ def get_final_confirmation(dp: Dispatcher):
                 wagon_class='Б',
                 wagon_type=data['wagon_type'],
                 wagon_railway=35,
-                charline='Б',
-                bedding=1,
-                services='М',
-                seat_number=data['seats'][0],
-                reserve=0
             )
+            for seat in data['seats']:
+                ticket_order.add_seat(seat)
             job_id = f'ticket-booking-{message.from_user.username}-{ticket_order.from_station_id}-{ticket_order.to_station_id}-{ticket_order.date}'
             scheduler.add_job(poll_ticket_service_task, 'interval',
                               args=(message.bot, message, ticket_order, dp),

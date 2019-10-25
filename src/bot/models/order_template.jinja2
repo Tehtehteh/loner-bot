@@ -1,0 +1,20 @@
+{% for seat in seats %}
+    places[{{ loop.index0 }}][ord]={{ loop.index0 }}&
+    places[{{ loop.index0 }}][from]={{ from_station_id }}&
+    places[{{ loop.index0 }}][to]={{ to_station_id }}&
+    places[{{ loop.index0 }}][train]={{ train_code }}&
+    places[{{ loop.index0 }}][date]={{ date }}&
+    places[{{ loop.index0 }}][wagon_num]={{ wagon_number }}&
+    places[{{ loop.index0 }}][wagon_class]={{ wagon_class }}&
+    places[{{ loop.index0 }}][wagon_type]={{ wagon_type }}&
+    places[{{ loop.index0 }}][wagon_railway]={{ wagon_railway }}&
+    places[{{ loop.index0 }}][charline]=Б&
+    places[{{ loop.index0 }}][firstname]={{ seat.first_name }}&
+    places[{{ loop.index0 }}][lastname]={{ seat.last_name }}&
+    places[{{ loop.index0 }}][bedding]=1&
+    places[{{ loop.index0 }}][services][]=М&
+    places[{{ loop.index0 }}][child]=&
+    places[{{ loop.index0 }}][student]=&
+    places[{{ loop.index0 }}][reserve]=0&
+    places[{{ loop.index0 }}][place_num]={{ seat.number }}&
+{% endfor %}

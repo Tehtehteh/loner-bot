@@ -1,15 +1,19 @@
+import os
 import random
 
 from urllib.parse import quote
-
-from dataclasses import dataclass
+from typing import List, Optional
+from dataclasses import dataclass, field
 from enum import Enum
+
+from jinja2 import Template
 
 SEAT_NUMBER_MAX_LENGTH = 3
 
 # ascii characters are prohibited :D
 ru_alphabet_lower = 'абвгдеёжзиклмопрстуфхцчшщэюя'
-names = ['Сергій', 'Іван', 'Микола', 'Софія', 'Дмитро', 'Ганна', 'Надія', 'Віктор', '']
+names = ['Сергій', 'Іван', 'Микола', 'Софія', 'Дмитро', 'Ганна', 'Надія', 'Віктор', 'Василь']
+surnames = ['Іванов', 'Морозов', 'Третяк', 'Проценко', 'Сорокін', 'Дубілет', 'Зеленський']
 
 
 class WagonType(Enum):
@@ -22,8 +26,17 @@ class WagonType(Enum):
 
 
 @dataclass
+class Seat:
+    number: str
+    first_name: str
+    last_name: str
+
+    def normalize_seat_number(self):
+        self.number = self.number.zfill(SEAT_NUMBER_MAX_LENGTH)
+
+
+@dataclass
 class TrainOrder:
-    order_number: int
     from_station_id: int
     to_station_id: int
     train_code: str
@@ -32,56 +45,37 @@ class TrainOrder:
     wagon_class: str
     wagon_type: WagonType
     wagon_railway: int
-    charline: str
-    services: str
-    seat_number: str
-    child = None
-    student = None
-    first_name: str = ''
-    last_name: str = ''
-    reserve: int = 0
-    bedding: int = 0
+    seats: List[Seat] = field(default_factory=list)
 
-    # def __init__(self):
-    #     pass
-
-    def __post_init__(self):
-        self.first_name = self.roll_random_name()
-        self.last_name = self.roll_random_name()
+    def __iter__(self):
+        return iter(vars(self))
 
     @staticmethod
-    def roll_random_name():
-        name_length = random.randint(5, 10)
-        return ''.join(random.choice(ru_alphabet_lower) for _ in range(name_length)).title()
+    def roll_random_name(name_list: List[str]) -> str:
+        return random.choice(name_list)
 
-    def add_seat(self, seat_number):
-        if 3 < len(seat_number) < 3:
-            seat_number = self.normalize_seat_number(seat_number)
-
-
-    @staticmethod
-    def normalize_seat_number(seat_number: str) -> str:
-        return seat_number.zfill(SEAT_NUMBER_MAX_LENGTH)
+    def add_seat(self, seat_number: str,
+                 first_name: Optional[str] = None,
+                 last_name: Optional[str] = None):
+        if not first_name:
+            first_name = self.roll_random_name(names)
+        if not last_name:
+            last_name = self.roll_random_name(surnames)
+        seat = Seat(seat_number, first_name, last_name)
+        if 3 < len(seat.number) < 3:
+            seat.normalize_seat_number()
+        self.seats.append(seat)
+        return self
 
     def serialize(self) -> str:
-        tpl = f"""places[0][ord]=0&
-        places[0][from]={self.from_station_id}&
-        places[0][to]={self.to_station_id}&
-        places[0][train]={self.train_code}&
-        places[0][date]={self.date}&
-        places[0][wagon_num]={self.wagon_number}&
-        places[0][wagon_class]={self.wagon_class}&
-        places[0][wagon_type]={self.wagon_type}&
-        places[0][wagon_railway]={self.wagon_railway}&
-        places[0][charline]=Б&
-        places[0][firstname]=Иван&
-        places[0][lastname]=Иванов&
-        places[0][bedding]=1&
-        places[0][services][]=М&
-        places[0][child]=&
-        places[0][student]=&
-        places[0][reserve]=0&
-        places[0][place_num]={self.seat_number}
-        """
-        # todo: normal escape
-        return quote(tpl.replace('\n', '').replace(' ', '')).replace('%3D', '=').replace('%26', '&')
+        with open(os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                               'order_template.jinja2')) as fd:
+            tpl = Template(fd.read())
+            tpl_str = tpl.render(**vars(self))
+            tpl_str = (
+                quote(tpl_str.replace('\n', ''))
+                    .replace('%3D', '=')
+                    .replace('%26', '&')
+                    .replace('%20', '')
+            )
+            return tpl_str
