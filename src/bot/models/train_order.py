@@ -31,7 +31,11 @@ class Seat:
     first_name: str
     last_name: str
 
-    def normalize_seat_number(self):
+    def __post_init__(self):
+        if 3 < len(self.number) < 3:
+            self._normalize_seat_number()
+
+    def _normalize_seat_number(self):
         self.number = self.number.zfill(SEAT_NUMBER_MAX_LENGTH)
 
 
@@ -47,9 +51,6 @@ class TrainOrder:
     wagon_railway: int
     seats: List[Seat] = field(default_factory=list)
 
-    def __iter__(self):
-        return iter(vars(self))
-
     @staticmethod
     def roll_random_name(name_list: List[str]) -> str:
         return random.choice(name_list)
@@ -62,8 +63,6 @@ class TrainOrder:
         if not last_name:
             last_name = self.roll_random_name(surnames)
         seat = Seat(seat_number, first_name, last_name)
-        if 3 < len(seat.number) < 3:
-            seat.normalize_seat_number()
         self.seats.append(seat)
         return self
 

@@ -11,7 +11,7 @@ from typing import List, Dict, Any
 from ..models.train_order import TrainOrder
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('train_service')
 
 
 lru_cached = lru_cache()
@@ -86,10 +86,11 @@ class TrainService:
                 raise CaptchaRequiredException
             return 'Successfully booked your seats, man!'
 
-    async def renew_captcha(self) -> str:
+    async def renew_captcha(self, renew_gv_session_id: bool = False) -> str:
         logger.info('Trying to renew captcha!')
+        cookies = {} if renew_gv_session_id else {'_gv_sessid': TrainService.gv_session_id}
         async with aiohttp.request('GET', self.captcha_url,
-                                   cookies={'_gv_sessid': TrainService.gv_session_id}) as response:
+                                   cookies=cookies) as response:
             if '_gv_sessid' in response.cookies:
                 gv_session_id = response.cookies['_gv_sessid'].value
                 if gv_session_id != TrainService.gv_session_id:

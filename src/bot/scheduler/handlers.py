@@ -1,8 +1,10 @@
+import os
 import logging
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.jobstores.redis import RedisJobStore
 
 from ..train_service.service import (
     TrainService, CaptchaRequiredException, InvalidInputDateException,
@@ -10,6 +12,7 @@ from ..train_service.service import (
 )
 
 scheduler = AsyncIOScheduler()
+scheduler.add_jobstore(RedisJobStore(db=1, host=os.environ.get('REDIS_HOST', 'redis')))
 logger = logging.getLogger(__name__)
 
 

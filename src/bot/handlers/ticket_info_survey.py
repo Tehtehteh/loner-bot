@@ -12,7 +12,7 @@ from ..train_service.service import TrainService
 from ..models.train_order import TrainOrder
 from ..scheduler.handlers import scheduler, poll_ticket_service_task
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('bot')
 
 
 async def start_ticket_info_survey(message: types.Message):
@@ -190,7 +190,9 @@ def get_final_confirmation(dp: Dispatcher):
             )
             for seat in data['seats']:
                 ticket_order.add_seat(seat)
-            job_id = f'ticket-booking-{message.from_user.username}-{ticket_order.from_station_id}-{ticket_order.to_station_id}-{ticket_order.date}'
+            job_id = f'ticket-booking-{message.from_user.username}-{ticket_order.from_station_id}-' \
+                     f'{ticket_order.to_station_id}-{ticket_order.date}'
+            logger.info('Creating periodic job with id: %s', job_id)
             scheduler.add_job(poll_ticket_service_task, 'interval',
                               args=(message.bot, message, ticket_order, dp),
                               seconds=20 * 60, next_run_time=datetime.now() + timedelta(seconds=3),
@@ -225,6 +227,6 @@ def get_and_renew_captcha(dp: Dispatcher):
         jobs = scheduler.get_jobs()
         for job in jobs:
             job.modify(kwargs={'captcha': captcha_code}, next_run_time=datetime.now() + timedelta(seconds=3))
-        await message.reply('Hehe, thanks for captcha bro...')
+        await message.reply('Отправляю капчу УЗ, спасибо.')
 
     dp.register_message_handler(_get_and_renew_captcha, _filter_captcha_message)

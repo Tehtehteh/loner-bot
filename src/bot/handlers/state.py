@@ -12,7 +12,3 @@ class TicketOrderState(StatesGroup):
     wagon_number = State()
     seats = State()
     is_ok = State()
-
-
-class CaptchaRenewState(StatesGroup):
-    captcha_verified = State()

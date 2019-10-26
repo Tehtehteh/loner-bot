@@ -1,0 +1,6 @@
+version: '3'
+services:
+  bot:
+    image: "ceilingcat/loner-bot:f5293995bcee171cec5171ad7088459aa00ba059"
+  redis:
+    image: "redis:alpine"
