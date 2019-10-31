@@ -227,8 +227,9 @@ def get_and_renew_captcha(dp: Dispatcher):
         captcha_code = message.text
         jobs = scheduler.get_jobs()
         for job in jobs:
+            callback_time = random.randint(5, 30)
             job.modify(kwargs={'captcha': captcha_code},
-                       next_run_time=datetime.now() + timedelta(seconds=random.randint(5, 30)))
+                       next_run_time=datetime.now() + timedelta(seconds=callback_time))
         await message.reply('Отправляю капчу УЗ, спасибо.')
 
     dp.register_message_handler(_get_and_renew_captcha, _filter_captcha_message)
