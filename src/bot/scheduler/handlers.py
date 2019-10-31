@@ -1,14 +1,15 @@
-import os
+# import os
 import logging
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.jobstores.redis import RedisJobStore
+# from apscheduler.jobstores.redis import RedisJobStore
 
-from ..train_service.service import (
-    TrainService, CaptchaRequiredException, InvalidInputDateException,
-    SeatAlreadyBookedException
+from ..train_service.service import TrainService
+from ..train_service.errors import (
+    CaptchaRequiredException, InvalidInputDateException,
+    SeatAlreadyBookedException, TooManySeatsOrderedException
 )
 
 scheduler = AsyncIOScheduler()
@@ -37,4 +38,11 @@ async def poll_ticket_service_task(bot: Bot, message: Message, ticket_order, dp:
         with open(captcha_fn, 'rb') as captcha_fd:
             await bot.send_photo(message.chat.id, captcha_fd,
                                  caption='УЗ требует ввода капчи. Введите, пожалуйста цифры на картинке.')
+    except TooManySeatsOrderedException:
+        logger.info('Renewing session, because of TooManySeatsOrderedException')
+        captcha_fn = await train_service.renew_captcha(renew_gv_session_id=True)
+        with open(captcha_fn, 'rb') as captcha_fd:
+            await bot.send_photo(message.chat.id, captcha_fd,
+                                 caption='Сессия была обновлена и УЗ требует ввода капчи. '
+                                         'Введите, пожалуйста цифры на картинке.')
 

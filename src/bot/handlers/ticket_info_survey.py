@@ -1,4 +1,5 @@
 import logging
+import random
 
 from datetime import datetime, timedelta
 
@@ -195,7 +196,7 @@ def get_final_confirmation(dp: Dispatcher):
             logger.info('Creating periodic job with id: %s', job_id)
             scheduler.add_job(poll_ticket_service_task, 'interval',
                               args=(message.bot, message, ticket_order, dp),
-                              seconds=20 * 60, next_run_time=datetime.now() + timedelta(seconds=3),
+                              seconds=30 * 60, next_run_time=datetime.now() + timedelta(seconds=3),
                               id=job_id)
         await message.reply('OK! Стартую бронирование лол..', reply_markup=types.ReplyKeyboardRemove())
         await state.finish()
@@ -226,7 +227,8 @@ def get_and_renew_captcha(dp: Dispatcher):
         captcha_code = message.text
         jobs = scheduler.get_jobs()
         for job in jobs:
-            job.modify(kwargs={'captcha': captcha_code}, next_run_time=datetime.now() + timedelta(seconds=3))
+            job.modify(kwargs={'captcha': captcha_code},
+                       next_run_time=datetime.now() + timedelta(seconds=random.randint(5, 30)))
         await message.reply('Отправляю капчу УЗ, спасибо.')
 
     dp.register_message_handler(_get_and_renew_captcha, _filter_captcha_message)

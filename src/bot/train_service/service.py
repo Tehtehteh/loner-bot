@@ -10,6 +10,12 @@ from typing import List, Dict, Any
 
 from ..models.train_order import TrainOrder
 
+from .errors import (
+    TooManySeatsOrderedException, SeatAlreadyBookedException,
+    CaptchaRequiredException, InvalidInputDateException,
+    InvalidRequestPayload
+)
+
 
 logger = logging.getLogger('train_service')
 
@@ -17,24 +23,9 @@ logger = logging.getLogger('train_service')
 lru_cached = lru_cache()
 
 
-class CaptchaRequiredException(Exception):
-    pass
-
-
-class InvalidRequestPayload(Exception):
-    pass
-
-
-class InvalidInputDateException(Exception):
-    pass
-
-
-class SeatAlreadyBookedException(Exception):
-    pass
-
-
 INVALID_INPUT_DATE_MSG = 'Введена неверная дата'
 SEAT_ALREADY_BOOKED_MSG = 'Выбранное вами место'
+TOO_MANY_SEATS_ORDERED_MSG = 'Нельзя выбрать больше'
 
 
 class TrainService:
@@ -75,8 +66,11 @@ class TrainService:
             response_json = await response.json()
             if 'error' in response_json:
                 err = response_json['data']['error']
-                if isinstance(err, list) and len(err) and err[0].startswith(SEAT_ALREADY_BOOKED_MSG):
-                    raise SeatAlreadyBookedException(err)
+                if isinstance(err, list) and len(err):
+                    if err[0].startswith(SEAT_ALREADY_BOOKED_MSG):
+                        raise SeatAlreadyBookedException(err)
+                    elif err[0].startswith(TOO_MANY_SEATS_ORDERED_MSG):
+                        raise TooManySeatsOrderedException(err)
                 elif err == INVALID_INPUT_DATE_MSG:
                     raise InvalidInputDateException
                 logger.error('Got error from Train service: %s', err)
