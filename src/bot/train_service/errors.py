@@ -16,3 +16,11 @@ class SeatAlreadyBookedException(Exception):
 
 class TooManySeatsOrderedException(Exception):
     ...
+
+
+class UnknownError(Exception):
+    ...
+
+
+class TrainAlreadyStarted(Exception):
+    ...

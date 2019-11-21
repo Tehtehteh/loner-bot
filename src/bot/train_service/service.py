@@ -6,14 +6,14 @@ import logging
 from functools import lru_cache
 from urllib.parse import quote
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
 
 from ..models.train_order import TrainOrder
 
 from .errors import (
     TooManySeatsOrderedException, SeatAlreadyBookedException,
     CaptchaRequiredException, InvalidInputDateException,
-    InvalidRequestPayload
+    InvalidRequestPayload, UnknownError, TrainAlreadyStarted
 )
 
 
@@ -26,6 +26,8 @@ lru_cached = lru_cache()
 INVALID_INPUT_DATE_MSG = 'Введена неверная дата'
 SEAT_ALREADY_BOOKED_MSG = 'Выбранное вами место'
 TOO_MANY_SEATS_ORDERED_MSG = 'Нельзя выбрать больше'
+TRAIN_ALREADY_STARTED_MSG = 'Оформление билетов в данном поезде невозможно -' \
+                           ' поезд уже отправился с указанной станции'
 
 
 class TrainService:
@@ -65,20 +67,26 @@ class TrainService:
                 raise InvalidRequestPayload
             response_json = await response.json()
             if 'error' in response_json:
-                err = response_json['data']['error']
-                if isinstance(err, list) and len(err):
-                    if err[0].startswith(SEAT_ALREADY_BOOKED_MSG):
-                        raise SeatAlreadyBookedException(err)
-                    elif err[0].startswith(TOO_MANY_SEATS_ORDERED_MSG):
-                        raise TooManySeatsOrderedException(err)
-                elif err == INVALID_INPUT_DATE_MSG:
-                    raise InvalidInputDateException
+                err: Union[List[str], str] = response_json['data']['error']
                 logger.error('Got error from Train service: %s', err)
-                return err
+                self.handle_error(err)
             elif 'captcha' in response_json:
                 logger.error('Ticket order blocked on captcha.')
                 raise CaptchaRequiredException
             return 'Successfully booked your seats, man!'
+
+    def handle_error(self, err: Union[List[str], str]) -> None:
+        if isinstance(err, list) and len(err):
+            if err[0].startswith(SEAT_ALREADY_BOOKED_MSG):
+                raise SeatAlreadyBookedException(err)
+            elif err[0].startswith(TOO_MANY_SEATS_ORDERED_MSG):
+                raise TooManySeatsOrderedException(err)
+            elif err[0].startswith(INVALID_INPUT_DATE_MSG):
+                raise InvalidInputDateException(err)
+            elif err[0].startswith(TRAIN_ALREADY_STARTED_MSG):
+                raise TrainAlreadyStarted(err)
+        else:
+            raise UnknownError(err)
 
     async def renew_captcha(self, renew_gv_session_id: bool = False) -> str:
         logger.info('Trying to renew captcha!')

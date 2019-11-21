@@ -9,8 +9,10 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from ..train_service.service import TrainService
 from ..train_service.errors import (
     CaptchaRequiredException, InvalidInputDateException,
-    SeatAlreadyBookedException, TooManySeatsOrderedException
+    SeatAlreadyBookedException, TooManySeatsOrderedException,
+    UnknownError
 )
+from .utils import make_ticket_order_job_id
 
 scheduler = AsyncIOScheduler()
 # Commenting for now
@@ -27,12 +29,16 @@ async def poll_ticket_service_task(bot: Bot, message: Message, ticket_order, dp:
     except SeatAlreadyBookedException as err:
         # don't stop polling, because we might
         await bot.send_message(message.chat.id, 'Выбранное вами место уже занято. Выберите ищо: ' + str(err))
-    except InvalidInputDateException:
+    except (InvalidInputDateException, UnknownError):
         # stop polling because date is invalid already
-        job_id = f'ticket-booking-{message.from_user.username}-{ticket_order.from_station_id}-{ticket_order.to_station_id}-{ticket_order.date}'
+        job_id = make_ticket_order_job_id(message.from_user.username,
+                                          ticket_order.from_station_id,
+                                          ticket_order.to_station_id,
+                                          ticket_order.date)
         logger.info('Stopping polling, because ticker order date is invalid. Job id: %s', job_id)
         scheduler.remove_job(job_id=job_id)
-        await bot.send_message(message.chat.id, "Дата указана некорректно. Останавливаем автоматическое бронирование.")
+        msg = "Дата указана некорректно или неизвестная ошибка. Останавливаем автоматическое бронирование."
+        await bot.send_message(message.chat.id, msg)
     except CaptchaRequiredException:
         captcha_fn = await train_service.renew_captcha()
         with open(captcha_fn, 'rb') as captcha_fd:

@@ -12,6 +12,7 @@ from .state import TicketOrderState
 from ..train_service.service import TrainService
 from ..models.train_order import TrainOrder
 from ..scheduler.handlers import scheduler, poll_ticket_service_task
+from ..scheduler.utils import make_ticket_order_job_id
 
 logger = logging.getLogger('bot')
 
@@ -191,8 +192,10 @@ def get_final_confirmation(dp: Dispatcher):
             )
             for seat in data['seats']:
                 ticket_order.add_seat(seat)
-            job_id = f'ticket-booking-{message.from_user.username}-{ticket_order.from_station_id}-' \
-                     f'{ticket_order.to_station_id}-{ticket_order.date}'
+            job_id = make_ticket_order_job_id(message.from_user.username,
+                                              ticket_order.from_station_id,
+                                              ticket_order.to_station_id,
+                                              ticket_order.date)
             logger.info('Creating periodic job with id: %s', job_id)
             scheduler.add_job(poll_ticket_service_task, 'interval',
                               args=(message.bot, message, ticket_order, dp),
