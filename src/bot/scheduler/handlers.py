@@ -1,11 +1,15 @@
-# import os
+import os
 import logging
+import random
+
+from datetime import datetime, timedelta
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 # from apscheduler.jobstores.redis import RedisJobStore
 
+from ..captcha_solver.anti_captcha import AntiCaptchaSolver
 from ..train_service.service import TrainService
 from ..train_service.errors import (
     CaptchaRequiredException, InvalidInputDateException,
@@ -39,16 +43,16 @@ async def poll_ticket_service_task(bot: Bot, message: Message, ticket_order, dp:
         scheduler.remove_job(job_id=job_id)
         msg = "Дата указана некорректно или неизвестная ошибка. Останавливаем автоматическое бронирование."
         await bot.send_message(message.chat.id, msg)
-    except CaptchaRequiredException:
-        captcha_fn = await train_service.renew_captcha()
-        with open(captcha_fn, 'rb') as captcha_fd:
-            await bot.send_photo(message.chat.id, captcha_fd,
-                                 caption='УЗ требует ввода капчи. Введите, пожалуйста цифры на картинке.')
-    except TooManySeatsOrderedException:
-        logger.info('Renewing session, because of TooManySeatsOrderedException')
-        captcha_fn = await train_service.renew_captcha(renew_gv_session_id=True)
-        with open(captcha_fn, 'rb') as captcha_fd:
-            await bot.send_photo(message.chat.id, captcha_fd,
-                                 caption='Сессия была обновлена и УЗ требует ввода капчи. '
-                                         'Введите, пожалуйста цифры на картинке.')
-
+    except (CaptchaRequiredException, TooManySeatsOrderedException) as e:
+        captcha_fn = await train_service.renew_captcha(renew_gv_session_id=isinstance(e, TooManySeatsOrderedException))
+        captcha_solver = AntiCaptchaSolver(client_key=os.environ.get('AC_CLIENT_KEY'))
+        jobs = scheduler.get_jobs()
+        for job in jobs:
+            job.pause()
+        solved = await captcha_solver.solve_from_file(captcha_fn)
+        jobs = scheduler.get_jobs()
+        await bot.send_message(message.chat.id, text='Обновил капчу. Продолжаю букинг билетиков :}.')
+        for job in jobs:
+            callback_time = random.randint(5, 30)
+            job.modify(kwargs={'captcha': solved},
+                       next_run_time=datetime.now() + timedelta(seconds=callback_time))

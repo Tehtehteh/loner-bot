@@ -199,7 +199,7 @@ def get_final_confirmation(dp: Dispatcher):
             logger.info('Creating periodic job with id: %s', job_id)
             scheduler.add_job(poll_ticket_service_task, 'interval',
                               args=(message.bot, message, ticket_order, dp),
-                              seconds=35 * 60, next_run_time=datetime.now() + timedelta(seconds=3),
+                              seconds=30, next_run_time=datetime.now() + timedelta(seconds=3),
                               id=job_id)
         await message.reply('OK! Стартую бронирование лол..', reply_markup=types.ReplyKeyboardRemove())
         await state.finish()
