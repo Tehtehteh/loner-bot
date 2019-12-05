@@ -1,3 +1,4 @@
+import os
 import logging
 import random
 
@@ -15,6 +16,7 @@ from ..scheduler.handlers import scheduler, poll_ticket_service_task
 from ..scheduler.utils import make_ticket_order_job_id
 
 logger = logging.getLogger('bot')
+POLL_PERIOD = int(os.environ.get('POLL_PERIOD', 32))
 
 
 async def start_ticket_info_survey(message: types.Message):
@@ -199,7 +201,7 @@ def get_final_confirmation(dp: Dispatcher):
             logger.info('Creating periodic job with id: %s', job_id)
             scheduler.add_job(poll_ticket_service_task, 'interval',
                               args=(message.bot, message, ticket_order, dp),
-                              seconds=35 * 60, next_run_time=datetime.now() + timedelta(seconds=3),
+                              seconds=POLL_PERIOD * 60, next_run_time=datetime.now() + timedelta(seconds=3),
                               id=job_id)
         await message.reply('OK! Стартую бронирование лол..', reply_markup=types.ReplyKeyboardRemove())
         await state.finish()
