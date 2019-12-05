@@ -2,12 +2,16 @@ import os
 import enum
 import base64
 import asyncio
+import logging
 
 import aiohttp
 
 from typing import Any, Optional
 
 from .interface import ICaptchaSolver
+
+
+logger = logging.getLogger('anti-captcha')
 
 
 class TaskType(enum.Enum):
@@ -41,17 +45,21 @@ class AntiCaptchaSolver(ICaptchaSolver):
             buffer = file_handler.read()
             data = base64.b64encode(buffer)
             body = self._create_request_body(data)
-            async with aiohttp.request('POST',
+            try:
+                async with aiohttp.request('POST',
                                        f'{self.ANTI_CAPTCHA_API_URL}/{self.CREATE_TASK_ENDPOINT}',
                                        json=body, headers=self._headers) as response:
 
-                response = await response.json()
-                task_id = self._parse_response(response)
-                while True:
-                    solution = await self._check_task_status(task_id)
-                    if solution:
-                        return solution
-                    await asyncio.sleep(1)
+                    response = await response.json()
+                    task_id = self._parse_response(response)
+                    while True:
+                        solution = await self._check_task_status(task_id)
+                        if solution:
+                            return solution
+                        await asyncio.sleep(1)
+            except Exception as e:
+                logger.exception('Got exception running anti-captcha: %s. Retrying...', e, exc_info=True)
+                await self.solve_from_file(file_name)
 
     async def _check_task_status(self, task_id: int) -> Optional[str]:
         url = f'{self.ANTI_CAPTCHA_API_URL}/{self.GET_TASK_ENDPOINT}'
