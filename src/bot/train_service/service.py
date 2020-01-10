@@ -39,6 +39,12 @@ class TrainService:
     stations_search_url = 'https://booking.uz.gov.ua/ru/train_search/station/'
     captcha_url = 'https://booking.uz.gov.ua/ru/captcha'
 
+    def __init__(self, client_id: str):
+        self.client_id = client_id
+
+    def __str__(self) -> str:
+        return f'Train service (customer: {self.client_id})'
+
     @lru_cached
     async def stations_search(self, term: str) -> List[Dict[str, Any]]:
         logger.info('Searching for station by term: %s', term)
@@ -75,7 +81,8 @@ class TrainService:
                 raise CaptchaRequiredException
             return 'Successfully booked your seats, man!'
 
-    def handle_error(self, err: Union[List[str], str]) -> None:
+    @staticmethod
+    def handle_error(err: Union[List[str], str]) -> None:
         if isinstance(err, list) and len(err):
             if err[0].startswith(SEAT_ALREADY_BOOKED_MSG):
                 raise SeatAlreadyBookedException(err)
