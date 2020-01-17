@@ -34,13 +34,13 @@ class TrainService:
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
     }
-    gv_session_id = 'idtnpc6m5qtmpb1i264ebpff65'
     ticket_order_url = 'https://booking.uz.gov.ua/ru/cart/add/'
     stations_search_url = 'https://booking.uz.gov.ua/ru/train_search/station/'
     captcha_url = 'https://booking.uz.gov.ua/ru/captcha'
 
     def __init__(self, client_id: str):
         self.client_id = client_id
+        self.gv_session_id = 'idtnpc6m5qtmpb1i264ebpff65'
 
     def __str__(self) -> str:
         return f'Train service (customer: {self.client_id})'
@@ -67,7 +67,7 @@ class TrainService:
             serialized = f'{serialized}&captcha={captcha}'
         async with aiohttp.request('POST', url=self.ticket_order_url,
                                    headers=self.headers, data=serialized,
-                                   cookies={'_gv_sessid': TrainService.gv_session_id}) as response:
+                                   cookies={'_gv_sessid': self.gv_session_id}) as response:
             if response.status == 503:
                 logger.error('Train service is unavailable (probably invalid request payload).')
                 raise InvalidRequestPayload
@@ -98,14 +98,14 @@ class TrainService:
 
     async def renew_captcha(self, renew_gv_session_id: bool = False) -> str:
         logger.info('Trying to renew captcha!')
-        cookies = {} if renew_gv_session_id else {'_gv_sessid': TrainService.gv_session_id}
+        cookies = {} if renew_gv_session_id else {'_gv_sessid': self.gv_session_id}
         async with aiohttp.request('GET', self.captcha_url,
                                    cookies=cookies) as response:
             if '_gv_sessid' in response.cookies:
                 gv_session_id = response.cookies['_gv_sessid'].value
-                if gv_session_id != TrainService.gv_session_id:
+                if gv_session_id != self.gv_session_id:
                     logger.info('Setting new gv session id for TrainService (%s)', gv_session_id)
-                    TrainService.gv_session_id = gv_session_id
+                    self.gv_session_id = gv_session_id
             captcha_file_name = os.path.join('captchas', str(uuid.uuid4()) + '.jpg')
             with open(captcha_file_name, 'wb') as captcha_fd:
                 async for image_part in response.content.iter_chunked(1048):
