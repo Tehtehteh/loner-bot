@@ -11,7 +11,7 @@ from bot.handlers.ticket_info_survey import (
     get_departure_station_input,
     get_seats_number, get_wagon_number, start_ticket_info_survey,
     cancel_order_handler, get_final_confirmation, get_arrival_station_input,
-    get_train_code, get_wagon_type, get_and_renew_captcha
+    get_train_code, get_wagon_type
 )
 
 logger = logging.getLogger('bot')
@@ -40,7 +40,6 @@ def main():
     get_final_confirmation(dispatcher)
     get_train_code(dispatcher)
     get_wagon_type(dispatcher)
-    get_and_renew_captcha(dispatcher)
     logger.info('Started bot polling.')
     executor.start_polling(dispatcher)
 
