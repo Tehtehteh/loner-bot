@@ -61,7 +61,7 @@ class TrainService:
                 return response_json
 
     async def make_order(self, train_order: TrainOrder, captcha: str = None) -> str:
-        logger.info('Making order ')
+        logger.info('Making order: %s', train_order)
         serialized = train_order.serialize()
         if captcha:
             serialized = f'{serialized}&captcha={captcha}'
@@ -79,6 +79,7 @@ class TrainService:
             elif 'captcha' in response_json:
                 logger.error('Ticket order blocked on captcha.')
                 raise CaptchaRequiredException
+            logger.info('Successfully made order for %s', train_order)
             return 'Successfully booked your seats, man!'
 
     @staticmethod

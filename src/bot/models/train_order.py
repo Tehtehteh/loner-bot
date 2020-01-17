@@ -31,6 +31,9 @@ class Seat:
     first_name: str
     last_name: str
 
+    def __str__(self) -> str:
+        return f'Seat <number: {self.number}>'
+
     def __post_init__(self):
         if 3 < len(self.number) < 3:
             self._normalize_seat_number()
@@ -50,6 +53,10 @@ class TrainOrder:
     wagon_type: WagonType
     wagon_railway: int
     seats: List[Seat] = field(default_factory=list)
+
+    def __str__(self) -> str:
+        return f'Ticker order <From: {self.from_station_id}, To: {self.to_station_id}, ' \
+               f'Date: {self.date}, Seats: {self.seats}>'
 
     @staticmethod
     def roll_random_name(name_list: List[str]) -> str:

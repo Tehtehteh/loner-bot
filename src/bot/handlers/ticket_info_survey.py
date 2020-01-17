@@ -204,10 +204,10 @@ def get_final_confirmation(dp: Dispatcher):
             logger.info('Creating periodic job with id: %s', job_id)
             client_id = f'{message.from_user.username}-{message.from_user.id}'
             train_service = TrainService(client_id)
-            job = Job(scheduler, id=job_id, group=message.from_user.username,
-                      func=poll_ticket_service_task, args=(message.bot, message, ticket_order, dp, train_service),
-                      seconds=POLL_PERIOD * 60, next_run_time=datetime.now() + timedelta(seconds=3))
-            scheduler._real_add_job(job)
+            scheduler.add_job(poll_ticket_service_task, 'interval',
+                              args=(message.bot, message, ticket_order, dp, train_service),
+                              seconds=POLL_PERIOD * 60, next_run_time=datetime.now() + timedelta(seconds=3),
+                              id=job_id)
         await message.reply('OK! Стартую бронирование лол..', reply_markup=types.ReplyKeyboardRemove())
         await state.finish()
 

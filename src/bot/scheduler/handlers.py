@@ -10,6 +10,7 @@ from aiogram.types import Message
 # from apscheduler.jobstores.redis import RedisJobStore
 
 from ..captcha_solver.anti_captcha import AntiCaptchaSolver
+from ..models.train_order import TrainOrder
 from ..train_service.service import TrainService
 from ..train_service.errors import (
     CaptchaRequiredException, InvalidInputDateException,
@@ -27,18 +28,18 @@ logger = logging.getLogger(__name__)
 
 async def poll_ticket_service_task(bot: Bot,
                                    message: Message,
-                                   ticket_order,
+                                   ticket_order: TrainOrder,
                                    dp: Dispatcher,
                                    train_service: TrainService,
                                    captcha: Optional[str] = None,
                                    ):
-    group_id = message.from_user.username
+    group_id = f'ticket-booking-{message.from_user.username}-{ticket_order.date}'
     try:
         response = await train_service.make_order(ticket_order, captcha=captcha)
         msg = f'Got this response from ticket order service: {response}'
         await bot.send_message(message.chat.id, msg)
     except SeatAlreadyBookedException as err:
-        # don't stop polling, because we might
+        # don't stop polling, because we might catch it up
         await bot.send_message(message.chat.id, 'Выбранное вами место уже занято. Выберите ищо: ' + str(err))
     except (InvalidInputDateException, UnknownError):
         # stop polling because date is invalid already
