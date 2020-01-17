@@ -14,6 +14,7 @@ from ..train_service.service import TrainService
 from ..models.train_order import TrainOrder
 from ..scheduler.handlers import scheduler, poll_ticket_service_task
 from ..scheduler.utils import make_ticket_order_job_id
+from ..scheduler.job import Job
 
 logger = logging.getLogger('bot')
 POLL_PERIOD = int(os.environ.get('POLL_PERIOD', 32))
@@ -199,10 +200,12 @@ def get_final_confirmation(dp: Dispatcher):
                                               ticket_order.to_station_id,
                                               ticket_order.date)
             logger.info('Creating periodic job with id: %s', job_id)
-            scheduler.add_job(poll_ticket_service_task, 'interval',
-                              args=(message.bot, message, ticket_order, dp),
-                              seconds=POLL_PERIOD * 60, next_run_time=datetime.now() + timedelta(seconds=3),
-                              id=job_id)
+            client_id = f'{message.from_user.username}-{message.from_user.id}'
+            train_service = TrainService(client_id)
+            job = Job(scheduler, id=job_id, group=message.from_user.username,
+                      func=poll_ticket_service_task, args=(message.bot, message, ticket_order, dp, train_service),
+                      seconds=POLL_PERIOD * 60, next_run_time=datetime.now() + timedelta(seconds=3))
+            scheduler._real_add_job(job)
         await message.reply('OK! Стартую бронирование лол..', reply_markup=types.ReplyKeyboardRemove())
         await state.finish()
 
@@ -221,20 +224,3 @@ async def cancel_order_handler(message: types.Message, state: FSMContext):
 
     await state.finish()
     await message.reply('Бронирование отменено.', reply_markup=types.ReplyKeyboardRemove())
-
-
-def get_and_renew_captcha(dp: Dispatcher):
-
-    def _filter_captcha_message(message: types.Message):
-        return len(message.text) == 4 and all(x.isdigit() for x in message.text)
-
-    async def _get_and_renew_captcha(message: types.Message):
-        captcha_code = message.text
-        jobs = scheduler.get_jobs()
-        for job in jobs:
-            callback_time = random.randint(5, 30)
-            job.modify(kwargs={'captcha': captcha_code},
-                       next_run_time=datetime.now() + timedelta(seconds=callback_time))
-        await message.reply('Отправляю капчу УЗ, спасибо.')
-
-    dp.register_message_handler(_get_and_renew_captcha, _filter_captcha_message)

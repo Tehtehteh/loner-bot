@@ -3,10 +3,10 @@ import logging
 import random
 
 from datetime import datetime, timedelta
+from typing import Optional
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 # from apscheduler.jobstores.redis import RedisJobStore
 
 from ..captcha_solver.anti_captcha import AntiCaptchaSolver
@@ -16,6 +16,7 @@ from ..train_service.errors import (
     SeatAlreadyBookedException, TooManySeatsOrderedException,
     UnknownError
 )
+from .scheduler import AsyncIOScheduler
 from .utils import make_ticket_order_job_id
 
 scheduler = AsyncIOScheduler()
@@ -24,8 +25,14 @@ scheduler = AsyncIOScheduler()
 logger = logging.getLogger(__name__)
 
 
-async def poll_ticket_service_task(bot: Bot, message: Message, ticket_order, dp: Dispatcher, captcha = None):
-    train_service = TrainService()
+async def poll_ticket_service_task(bot: Bot,
+                                   message: Message,
+                                   ticket_order,
+                                   dp: Dispatcher,
+                                   train_service: TrainService,
+                                   captcha: Optional[str] = None,
+                                   ):
+    group_id = message.from_user.username
     try:
         response = await train_service.make_order(ticket_order, captcha=captcha)
         msg = f'Got this response from ticket order service: {response}'
@@ -46,12 +53,10 @@ async def poll_ticket_service_task(bot: Bot, message: Message, ticket_order, dp:
     except (CaptchaRequiredException, TooManySeatsOrderedException) as e:
         captcha_fn = await train_service.renew_captcha(renew_gv_session_id=isinstance(e, TooManySeatsOrderedException))
         captcha_solver = AntiCaptchaSolver(client_key=os.environ.get('AC_CLIENT_KEY'))
-        jobs = scheduler.get_jobs()
-        for job in jobs:
-            job.pause()
+        scheduler.pause_jobs_by_group(group_id)
         solved = await captcha_solver.solve_from_file(captcha_fn)
-        jobs = scheduler.get_jobs()
         await bot.send_message(message.chat.id, text='Обновил капчу. Продолжаю букинг билетиков :}.')
+        jobs = scheduler.get_jobs_by_group(group_id)
         for job in jobs:
             callback_time = random.randint(5, 30)
             job.modify(kwargs={'captcha': solved},
