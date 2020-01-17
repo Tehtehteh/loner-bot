@@ -29,7 +29,8 @@ async def start_ticket_info_survey(message: types.Message):
 def get_departure_station(dp: Dispatcher):
     async def _get_departure_station(message: types.Message, state: FSMContext):
         search_term = message.text
-        stations = await TrainService().stations_search(search_term)
+        client_id = f'{message.from_user.username}-{message.from_user.id}'
+        stations = await TrainService(client_id).stations_search(search_term)
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
         for station in stations:
             markup.add(f'{station["title"]}({station["value"]})')
@@ -60,7 +61,8 @@ def get_arrival_station(dp: Dispatcher):
         logger.info('User %s has set arrival station: %s', message.from_user.username,
                     message.text)
         search_term = message.text
-        stations = await TrainService().stations_search(search_term)
+        client_id = f'{message.from_user.username}-{message.from_user.id}'
+        stations = await TrainService(client_id).stations_search(search_term)
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
         for station in stations:
             markup.add(f'{station["title"]}({station["value"]})')
