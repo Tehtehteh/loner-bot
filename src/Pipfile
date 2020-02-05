@@ -15,6 +15,7 @@ aiogram = "*"
 apscheduler = "*"
 jinja2 = "*"
 redis = "*"
+emoji = "*"
 
 [requires]
 python_version = "3.7"

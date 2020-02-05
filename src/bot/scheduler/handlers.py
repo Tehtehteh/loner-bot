@@ -5,10 +5,12 @@ import random
 from datetime import datetime, timedelta
 from typing import Optional
 
-from aiogram import Bot, Dispatcher
+from aiogram import Bot, Dispatcher, types
 from aiogram.types import Message
 # from apscheduler.jobstores.redis import RedisJobStore
 
+from .scheduler import AsyncIOScheduler
+from .utils import make_ticket_order_job_id
 from ..captcha_solver.anti_captcha import AntiCaptchaSolver
 from ..models.train_order import TrainOrder
 from ..train_service.service import TrainService
@@ -17,8 +19,11 @@ from ..train_service.errors import (
     SeatAlreadyBookedException, TooManySeatsOrderedException,
     UnknownError
 )
-from .scheduler import AsyncIOScheduler
-from .utils import make_ticket_order_job_id
+from ..messages import (
+    successful_ticket_order, failed_ticket_order,
+    updated_captcha_session
+)
+
 
 scheduler = AsyncIOScheduler()
 # Commenting for now
@@ -36,12 +41,13 @@ async def poll_ticket_service_task(bot: Bot,
     group_id = f'ticket-booking-{message.from_user.username}-{ticket_order.date}'
     try:
         response = await train_service.make_order(ticket_order, captcha=captcha)
-        msg = f'Got this response from ticket order service: {response}'
-        await bot.send_message(message.chat.id, msg)
+        msg = successful_ticket_order(ticket_order)
+        await bot.send_message(message.chat.id, msg, parse_mode=types.ParseMode.MARKDOWN)
     except SeatAlreadyBookedException as err:
-        # don't stop polling, because we might catch it up
-        await bot.send_message(message.chat.id, 'Выбранное вами место уже занято. Выберите ищо: ' + str(err))
-    except (InvalidInputDateException, UnknownError):
+        # don't stop polling, because we might catch it up a little bit later
+        msg = failed_ticket_order(ticket_order, err)
+        await bot.send_message(message.chat.id, msg, parse_mode=types.ParseMode.MARKDOWN)
+    except (InvalidInputDateException, UnknownError) as err:
         # stop polling because date is invalid already
         job_id = make_ticket_order_job_id(message.from_user.username,
                                           ticket_order.from_station_id,
@@ -49,14 +55,17 @@ async def poll_ticket_service_task(bot: Bot,
                                           ticket_order.date)
         logger.info('Stopping polling, because ticker order date is invalid. Job id: %s', job_id)
         scheduler.remove_job(job_id=job_id)
-        msg = "Дата указана некорректно или неизвестная ошибка. Останавливаем автоматическое бронирование."
-        await bot.send_message(message.chat.id, msg)
+        additional_info = "Дата указана некорректно или неизвестная ошибка." \
+                          " Останавливаем автоматическое бронирование."
+        msg = failed_ticket_order(ticket_order, err, additional_info)
+        await bot.send_message(message.chat.id, msg, parse_mode=types.ParseMode.MARKDOWN)
     except (CaptchaRequiredException, TooManySeatsOrderedException) as e:
         captcha_fn = await train_service.renew_captcha(renew_gv_session_id=isinstance(e, TooManySeatsOrderedException))
         captcha_solver = AntiCaptchaSolver(client_key=os.environ.get('AC_CLIENT_KEY'))
         scheduler.pause_jobs_by_group(group_id)
         solved = await captcha_solver.solve_from_file(captcha_fn)
-        await bot.send_message(message.chat.id, text='Обновил капчу. Продолжаю букинг билетиков :}.')
+        msg = updated_captcha_session(ticket_order)
+        await bot.send_message(message.chat.id, msg, parse_mode=types.ParseMode.MARKDOWN)
         jobs = scheduler.get_jobs_by_group(group_id)
         for job in jobs:
             callback_time = random.randint(5, 30)

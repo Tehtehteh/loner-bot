@@ -8,6 +8,7 @@ import aiogram.utils.markdown as md
 
 from aiogram import types, Dispatcher
 from aiogram.dispatcher import FSMContext
+from aiogram.utils.emoji import emojize
 
 from .state import TicketOrderState
 from ..train_service.service import TrainService
@@ -208,7 +209,9 @@ def get_final_confirmation(dp: Dispatcher):
                               args=(message.bot, message, ticket_order, dp, train_service),
                               seconds=POLL_PERIOD * 60, next_run_time=datetime.now() + timedelta(seconds=3),
                               id=job_id)
-        await message.reply('OK! Стартую бронирование лол..', reply_markup=types.ReplyKeyboardRemove())
+        await message.reply(f'OK! Стартую бронирование. Идентификатор бронирования: {md.italic(job_id)}',
+                            reply_markup=types.ReplyKeyboardRemove(),
+                            parse_mode=types.ParseMode.MARKDOWN)
         await state.finish()
 
     dp.register_message_handler(_get_final_confirmation,
@@ -226,3 +229,34 @@ async def cancel_order_handler(message: types.Message, state: FSMContext):
 
     await state.finish()
     await message.reply('Бронирование отменено.', reply_markup=types.ReplyKeyboardRemove())
+
+
+def cancel_order_by_id(dp: Dispatcher):
+    async def _handler(message: types.Message):
+        group_id = f'ticket-booking-{message.from_user.username}'
+        job_id = message.text.lstrip('/cancel_by_id ')
+        user_jobs = list(filter(lambda j: j.id == job_id, scheduler.get_jobs_by_group(group_id=group_id)))
+        if not user_jobs:
+            await message.reply('Бронирований по такому идентификатору не найдено. Проверьте идентификатор.')
+            return
+        for job in user_jobs:
+            job.remove()
+        await message.reply(emojize('Удалил бронирование. Больше они вас не побеспокоят :tada:'),
+                            parse_mode=types.ParseMode.MARKDOWN)
+    dp.register_message_handler(_handler, commands=['cancel_by_id'])
+
+
+def list_all_jobs(dp: Dispatcher):
+    async def _handler(message: types.Message):
+        group_id = f'ticket-booking-{message.from_user.username}'
+        jobs = scheduler.get_jobs_by_group(group_id)
+        if not jobs:
+            await message.reply(emojize('Бронирований не найдено! :warning:'),
+                                parse_mode=types.ParseMode.MARKDOWN)
+            return
+        msg = [md.text(md.bold('Список ваших бронирований:'))]
+        for job in jobs:
+            msg.append(md.text(md.bold('id:'), job.id))
+            msg.append(md.text(md.bold('Информация:'), job.args[2]))
+        await message.reply(md.text(*msg, sep='\n'), parse_mode=types.ParseMode.MARKDOWN)
+    dp.register_message_handler(_handler, commands=['list'])
