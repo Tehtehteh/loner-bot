@@ -19,6 +19,7 @@ from ..scheduler.job import Job
 
 logger = logging.getLogger('bot')
 POLL_PERIOD = int(os.environ.get('POLL_PERIOD', 32))
+POLL_ADDITIONAL_SECS = int(os.environ.get('POLL_ADDITIONAL_SECS', 10))
 
 
 async def start_ticket_info_survey(message: types.Message):
@@ -207,7 +208,8 @@ def get_final_confirmation(dp: Dispatcher):
             train_service = TrainService(client_id)
             scheduler.add_job(poll_ticket_service_task, 'interval',
                               args=(message.bot, message, ticket_order, dp, train_service),
-                              seconds=POLL_PERIOD * 60, next_run_time=datetime.now() + timedelta(seconds=3),
+                              seconds=(POLL_PERIOD * 60) + POLL_ADDITIONAL_SECS,
+                              next_run_time=datetime.now() + timedelta(seconds=3),
                               id=job_id)
         await message.reply(f'OK! Стартую бронирование. Идентификатор бронирования: {md.italic(job_id)}',
                             reply_markup=types.ReplyKeyboardRemove(),
