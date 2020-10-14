@@ -207,7 +207,7 @@ def get_final_confirmation(dp: Dispatcher):
             client_id = f'{message.from_user.username}-{message.from_user.id}'
             train_service = TrainService(client_id)
             scheduler.add_job(poll_ticket_service_task, 'interval',
-                              args=(message.bot, message, ticket_order, dp, train_service),
+                              args=(message, ticket_order, train_service),
                               seconds=(POLL_PERIOD * 60) + POLL_ADDITIONAL_SECS,
                               next_run_time=datetime.now() + timedelta(seconds=3),
                               id=job_id)

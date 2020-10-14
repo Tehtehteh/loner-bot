@@ -24,3 +24,7 @@ class UnknownError(Exception):
 
 class TrainAlreadyStarted(Exception):
     ...
+
+
+class ServerFaultException(Exception):
+    ...

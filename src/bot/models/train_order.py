@@ -56,6 +56,7 @@ class TrainOrder:
 
     def __str__(self) -> str:
         return f'Ticker order <From: {self.from_station_id}, To: {self.to_station_id}, ' \
+               f'Wagon: {self.wagon_number}, ' \
                f'Date: {self.date}, Seats: {self.seats}>'
 
     @staticmethod

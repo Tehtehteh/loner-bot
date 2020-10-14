@@ -5,7 +5,7 @@ from aiogram import executor
 
 from log import setup_logging
 from bot.scheduler.handlers import scheduler
-from bot.core import create_bot
+from bot.core import bot, dispatcher
 from bot.handlers.ticket_info_survey import (
     get_arrival_station, get_date, get_departure_station,
     get_departure_station_input,
@@ -24,7 +24,6 @@ def main():
     logger.info('Starting scheduler.')
     scheduler.start()
     logger.info('Creating bot with given token.')
-    bot, dispatcher = create_bot(os.environ.get('BOT_TOKEN'))
     logger.info('Registering all message handlers.')
     dispatcher.register_message_handler(start_ticket_info_survey,
                                         commands=['start'])

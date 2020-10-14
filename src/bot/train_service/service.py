@@ -13,7 +13,8 @@ from ..models.train_order import TrainOrder
 from .errors import (
     TooManySeatsOrderedException, SeatAlreadyBookedException,
     CaptchaRequiredException, InvalidInputDateException,
-    InvalidRequestPayload, UnknownError, TrainAlreadyStarted
+    InvalidRequestPayload, UnknownError, TrainAlreadyStarted,
+    ServerFaultException
 )
 
 
@@ -25,6 +26,7 @@ lru_cached = lru_cache()
 
 INVALID_INPUT_DATE_MSG = 'Введена неверная дата'
 SEAT_ALREADY_BOOKED_MSG = 'Выбранное вами место'
+SERVER_COULD_NOT_HANDLE_REQUEST_MSG = 'Повторите, пожалуйста, свой запрос.'
 TOO_MANY_SEATS_ORDERED_MSG = 'Нельзя выбрать больше'
 TRAIN_ALREADY_STARTED_MSG = 'Оформление билетов в данном поезде невозможно -' \
                            ' поезд уже отправился с указанной станции'
@@ -93,6 +95,8 @@ class TrainService:
                 raise InvalidInputDateException(err)
             elif err[0].startswith(TRAIN_ALREADY_STARTED_MSG):
                 raise TrainAlreadyStarted(err)
+            elif err[0].startswith(SERVER_COULD_NOT_HANDLE_REQUEST_MSG):
+                raise ServerFaultException(err)
         else:
             raise UnknownError(err)
 
