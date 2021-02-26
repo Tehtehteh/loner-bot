@@ -10,7 +10,7 @@ flake8-bandit = "*"
 flake8-codeclimate = "*"
 
 [packages]
-aiohttp = "~=3.6.2"
+aiohttp = "~=3.7.4"
 aiogram = "==2.3"
 apscheduler = "~=3.6.3"
 jinja2 = "~=2.11.1"
