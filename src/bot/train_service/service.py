@@ -28,7 +28,7 @@ lru_cached = lru_cache()
 INVALID_INPUT_DATE_MSG = 'Введена неверная дата'
 SEAT_ALREADY_BOOKED_MSG = 'Выбранное вами место'
 SERVER_COULD_NOT_HANDLE_REQUEST_MSG = 'Повторите, пожалуйста, свой запрос.'
-TOO_MANY_SEATS_ORDERED_MSG = 'Не можна выбрать больше'
+TOO_MANY_SEATS_ORDERED_MSG = 'Не можна вибрати'
 TRAIN_ALREADY_STARTED_MSG = 'Оформление билетов в данном поезде невозможно -' \
                            ' поезд уже отправился с указанной станции'
 
