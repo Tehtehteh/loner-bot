@@ -5,6 +5,7 @@ import logging
 
 from functools import lru_cache
 from urllib.parse import quote
+from aiohttp.connector import TCPConnector
 
 from typing import List, Dict, Any, Union
 
@@ -17,7 +18,7 @@ from .errors import (
     ServerFaultException
 )
 
-
+connector = TCPConnector(verify_ssl=False)
 logger = logging.getLogger('train_service')
 
 
@@ -53,7 +54,7 @@ class TrainService:
 
         async with aiohttp.request('GET', '?'.join((self.stations_search_url,
                                                     f'term={quote(term)}')),
-                                   headers={'Content-Type': 'application/json'}) as response:
+                                   headers={'Content-Type': 'application/json'}, connector=connector) as response:
             if response.status == 503:
                 logger.error('Failed to make a request for stations lookup, code: 503')
             else:
@@ -69,7 +70,8 @@ class TrainService:
             serialized = f'{serialized}&captcha={captcha}'
         async with aiohttp.request('POST', url=self.ticket_order_url,
                                    headers=self.headers, data=serialized,
-                                   cookies={'_gv_sessid': self.gv_session_id}) as response:
+                                   cookies={'_gv_sessid': self.gv_session_id},
+                                   connector=connector) as response:
             if response.status == 503:
                 logger.error('Train service is unavailable (probably invalid request payload).')
                 raise InvalidRequestPayload
@@ -104,7 +106,8 @@ class TrainService:
         logger.info('Trying to renew captcha!')
         cookies = {} if renew_gv_session_id else {'_gv_sessid': self.gv_session_id}
         async with aiohttp.request('GET', self.captcha_url,
-                                   cookies=cookies) as response:
+                                   cookies=cookies,
+                                   connector=connector) as response:
             if '_gv_sessid' in response.cookies:
                 gv_session_id = response.cookies['_gv_sessid'].value
                 if gv_session_id != self.gv_session_id:
