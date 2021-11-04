@@ -36,9 +36,9 @@ class TrainService:
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
     }
-    ticket_order_url = 'https://booking.uz.gov.ua/ru/cart/add/'
-    stations_search_url = 'https://booking.uz.gov.ua/ru/train_search/station/'
-    captcha_url = 'https://booking.uz.gov.ua/ru/captcha'
+    ticket_order_url = 'https://booking.uz.gov.ua/cart/add/'
+    stations_search_url = 'https://booking.uz.gov.ua/train_search/station/'
+    captcha_url = 'https://booking.uz.gov.ua/captcha'
 
     def __init__(self, client_id: str):
         self.client_id = client_id

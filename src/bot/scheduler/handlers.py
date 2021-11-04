@@ -7,6 +7,7 @@ from typing import Optional
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import Message
 from apscheduler.jobstores.redis import RedisJobStore
+from apscheduler.jobstores.memory import MemoryJobStore
 
 from .scheduler import AsyncIOScheduler
 from .utils import make_ticket_order_job_id
@@ -27,8 +28,7 @@ from ..messages import (
 
 scheduler = AsyncIOScheduler()
 # Commenting for now
-scheduler.add_jobstore(RedisJobStore(db=1, host=os.environ.get('REDIS_HOST', 'redis'),
-                                     pickle_protocol=pickle.DEFAULT_PROTOCOL))
+scheduler.add_jobstore(MemoryJobStore())
 logger = logging.getLogger(__name__)
 
 
